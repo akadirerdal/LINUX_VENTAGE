@@ -203,6 +203,13 @@ Root erişimi gerektirir çünkü doğrudan kernel sysfs yollarına yazar.
 
 ------------------------------------------------------------------------
 
+# Güncelleme
+
+- sadece teminali xterme aldım ve ekranı tek terminalde 2 ye böldüm ...
+- gerisine şimdilik üşeniyom ama devam ederiz :-)
+
+------------------------------------------------------------------------
+
 # Son Söz
 
 Bu proje kurumsal bir yazılım değil.

@@ -1,11 +1,24 @@
 #!/bin/bash
 
+# ================= TMUX ENTEGRASYONU =================
+
+if [[ -z "$TMUX" ]]; then
+    if command -v tmux >/dev/null 2>&1; then
+        tmux new-session -d -s powerpanel "$0"
+        tmux attach -t powerpanel
+        exit
+    else
+        echo "tmux kurulu değil. sudo pacman -S tmux"
+        exit 1
+    fi
+fi
+
 CPU_GOVERNOR="/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 TURBO_PATH="/sys/devices/system/cpu/intel_pstate/no_turbo"
 
 DGPU_PCI="0000:03:00.0"
-DGPU_DRM="/sys/class/drm/card0/device"   # Harici Arc
-IGPU_DRM="/sys/class/drm/card1/device"   # Dahili UHD (00:02.0)
+DGPU_DRM="/sys/class/drm/card0/device"
+IGPU_DRM="/sys/class/drm/card1/device"
 
 RED='\033[1;31m'
 GREEN='\033[1;32m'
@@ -14,35 +27,21 @@ CYAN='\033[1;36m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 
-# ================= SENSORS TERMİNAL =================
+# ================= SENSORS (TMUX SPLIT) =================
 
 start_sensors_terminal() {
-    if command -v gnome-terminal >/dev/null 2>&1; then
-        gnome-terminal -- bash -c "watch sensors; exec bash" &
-        SENSORS_PID=$!
-    elif command -v konsole >/dev/null 2>&1; then
-        konsole -e bash -c "watch sensors" &
-        SENSORS_PID=$!
-    elif command -v xfce4-terminal >/dev/null 2>&1; then
-        xfce4-terminal -e "bash -c 'watch sensors'" &
-        SENSORS_PID=$!
-    elif command -v xterm >/dev/null 2>&1; then
-        xterm -e watch sensors &
-        SENSORS_PID=$!
-    else
-        echo "Hiçbir terminal bulunamadı."
-        SENSORS_PID=""
-    fi
+    tmux split-window -h "watch sensors"
+    tmux select-pane -L
+    SENSORS_PANE=$(tmux list-panes -F "#{pane_id}" | tail -n1)
 }
+
 stop_sensors_terminal() {
-    [[ -n "$SENSORS_PID" ]] && kill $SENSORS_PID 2>/dev/null
+    [[ -n "$SENSORS_PANE" ]] && tmux kill-pane -t "$SENSORS_PANE" 2>/dev/null
 }
 
-# Terminali başlat
 start_sensors_terminal
-
-# Script kapanınca sensors terminali de kapansın
 trap stop_sensors_terminal EXIT
+
 # ================= CPU =================
 
 get_cpu_mode() { cat $CPU_GOVERNOR 2>/dev/null; }
